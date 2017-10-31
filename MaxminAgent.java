@@ -106,8 +106,6 @@ public class MaxminAgent {
 			myScore = scoreMap.get(num)*scoreMap.get(num);
 			pick(new_board, num/columns, num%columns);
 			fallDown(new_board);
-		//	System.out.println("depth:"+depth+" "+num);
-		//	Print(copyBoard);
 			if(!isGameOver(new_board)){
 				opScore = getScoreOfMin(new_board, depth-1, maxScore);
 			}
@@ -117,138 +115,105 @@ public class MaxminAgent {
 							
 			}
 		}
-		//System.out.println(maxScore);
-		//System.out.printf("choose:"+ m[0]+" "+m[1]);
 		m[0] = maxNum/columns;
 		m[1] = maxNum%columns; 
-		//Print(board);
-		//System.out.println(max);
 	}
-	
-	public void minmaxPick1(int[][] board, int[] m){
+	public static void minmaxPick(int[][] board, int[] m){
 		int[][] copyBoard = getCopyOfBoard(board);
 		Map<Integer, Integer> scoreMap = new HashMap<Integer, Integer>();
-		getScoreMap(board, scoreMap);
-		//System.out.println(scoreMap);
+		int[][] sort = getScoreMap(copyBoard, scoreMap);
 		int depth = 2;
 		// Adjust the forward checking depth according to board size
-		/*if(scoreMap.size() <= 7){ 
-			depth = 7;
-			System.out.println("e");
-		}
-		else if(scoreMap.size() <= 10){
+		if(scoreMap.size() < 10){ 
+			depth = 8;
+		}else if(scoreMap.size() < 30){
 			depth = 6;
-			System.out.println("d");
-		}
-		else if(scoreMap.size() <= 16){
-			depth = 5;
-			System.out.println("c");
-		}
-		else if(scoreMap.size() <= 30){
+		}else if(scoreMap.size() < 135){
 			depth = 4;
-			System.out.println("b");
 		}
-		else if(scoreMap.size() <= 100){
-			depth = 3;
-			System.out.println("a");
-		}*/
-		depth = (int)(Math.log(100000)/Math.log(scoreMap.size()));
-		if(depth > 7)
-			depth = 7;
-		//System.out.println(depth);
+		depth = 2;
+		System.out.println(depth);
 		int myScore = 0;
 		int opScore = 0;
-		int maxScore = -4569760;
+		int maxScore =  -rows*columns*rows*columns;
 		int maxNum = 0;
-		int[][] new_board;
-	//	int max = 0;
-		for(int num : scoreMap.keySet()){
-			new_board = getCopyOfBoard(copyBoard);
+		for(int i = 0; i < sort.length; i++){
+			int num = sort[i][0];
+			int isGameOver = remaining;
+			copyBoard = getCopyOfBoard(board);
 			myScore = scoreMap.get(num)*scoreMap.get(num);
 			opScore = 0;
-		//	myScore = scoreMap.get(num);
-			pick(new_board, num/columns, num%columns);
-			fallDown(new_board);
-		//	System.out.println("depth:"+depth+" "+num);
-		//	Print(copyBoard);
-			if(!isGameOver(new_board)){
-				//opScore = getScoreOfMin1(new_board, depth-1, maxScore);
-				opScore = getScoreOfMin1(new_board, depth-1, maxScore - myScore);
+			isGameOver -= pick(copyBoard, num/columns, num%columns);
+			fallDown(copyBoard);
+			//temp record the remaining number of fruits if it's 0 then game over 
+			if(isGameOver > 0){
+				opScore = getScoreOfMin(copyBoard, depth-1, maxScore - myScore, isGameOver);
 			}
 			if(maxScore < myScore + opScore){
 				maxScore = myScore + opScore;
 				maxNum = num;			
 			}
 		}
-		//System.out.println(maxScore);
-		//System.out.printf("choose:"+ m[0]+" "+m[1]);
 		m[0] = maxNum/columns;
 		m[1] = maxNum%columns; 
-		//Print(board);
-		//System.out.println(max);
 	}
 	
-	public int getScoreOfMin1(int[][] board, int depth, int a){
-		int min = 4569760;
+	public static int getScoreOfMin(int[][] board, int depth, int a, int numOfRemain){
+		int min =  rows*columns*rows*columns;
 		//Utilize greedy as evaluate function 
 		if(depth <= 0){
 			int x = greedyPick(board, new int[2]);
 			return Math.min(min, -1*x*x);
 		}
-		
 		int[][] copyBoard = getCopyOfBoard(board);
 		Map<Integer, Integer> scoreMap = new HashMap<Integer, Integer>();
-		getScoreMap(copyBoard, scoreMap);
-		//System.out.println(scoreMap);
+		int[][] sort = getScoreMap(copyBoard, scoreMap);
 		int opScore = 0;
 		int myScore = 0;
-		for(int num : scoreMap.keySet()){
+		for(int i = 0; i < sort.length; i++){
+			int num = sort[i][0];
+			int isGameOver =numOfRemain;
+			if(!scoreMap.containsKey(num))
+				System.out.println(num);
 			opScore = scoreMap.get(num)*scoreMap.get(num);
-		//	opScore = scoreMap.get(num);
 			copyBoard = getCopyOfBoard(board);
-			pick(copyBoard, num/columns, num%columns);
+			isGameOver -= pick(copyBoard, num/columns, num%columns);
 			fallDown(copyBoard);
-		//	System.out.println("mindepth:"+depth+" "+num);
-		//	Print(copyBoard);
-			//System.out.println(isGameOver(copyBoard));
 			myScore = 0;
-			if(!isGameOver(copyBoard)){
-				//myScore = getScoreOfMax1(copyBoard, depth-1, min);
-				myScore = getScoreOfMax1(copyBoard, depth-1, min + opScore);
+			if(isGameOver > 0){
+				myScore = getScoreOfMax(copyBoard, depth-1, min + opScore, isGameOver);
 			}
-	//		System.out.println(myScore+" " +opScore);
 			if(myScore - opScore <= a)
 				return myScore - opScore;
 			min = Math.min(min, myScore - opScore);
 		}
-	//	System.out.println(min);
 		return min;
 	}
 	
-	public int getScoreOfMax1(int[][] board, int depth, int b){
-		int max = -4569760;
+	//Get the score of max layer
+	public static int getScoreOfMax(int[][] board, int depth, int b, int numOfRemain){
+		int max = -rows*columns*rows*columns;
+		//Utilize greedy as evaluate function 
 		if(depth <= 0){
 			int x = greedyPick(board, new int[2]);
 			return Math.max(max, x*x);
 		}
 		int[][] copyBoard = getCopyOfBoard(board);
 		Map<Integer, Integer> scoreMap = new HashMap<Integer, Integer>();
-		getScoreMap(copyBoard, scoreMap);
-		//System.out.println(scoreMap);
+		int[][] sort = getScoreMap(copyBoard, scoreMap);
 		int myScore = 0;
 		int opScore = 0;
-		for(int num : scoreMap.keySet()){
+		for(int i = 0; i < sort.length; i++){
+			int num = sort[i][0];
+			int isGameOver = numOfRemain;
 			myScore = scoreMap.get(num)*scoreMap.get(num);
-		//	myScore = scoreMap.get(num);
 			copyBoard = getCopyOfBoard(board);
-			pick(copyBoard, num/columns, num%columns);
+			isGameOver -= pick(copyBoard, num/columns, num%columns);
 			fallDown(copyBoard);
-		//	System.out.println("maxdepth:"+depth+" "+num);
-		//	Print(copyBoard);
 			opScore = 0;
-			if(!isGameOver(copyBoard)){
-				//opScore = getScoreOfMin1(copyBoard, depth-1, max);
-				opScore = getScoreOfMin1(copyBoard, depth-1, max - myScore);
+			// Maximize myScore - opScore, pruning if the result is larger than b
+			if(isGameOver > 0){
+				opScore = getScoreOfMin(copyBoard, depth-1, max - myScore, isGameOver);
 			}
 			if(myScore+opScore >= b)
 				return myScore+opScore;
@@ -257,109 +222,34 @@ public class MaxminAgent {
 		return max;
 	}
 	
-	
-	//Get the score of min layer
-		public int getScoreOfMin(int[][] board, int depth, int a){
-			int min = Integer.MAX_VALUE;
-			//Utilize greedy as evaluate function 
-			if(depth <= 0){
-				int x = greedyPick(board, new int[2]);
-				return Math.min(min, -1*x*x);
-			}
-			
-			int[][] copyBoard = getCopyOfBoard(board);
-			Map<Integer, Integer> scoreMap = new HashMap<Integer, Integer>();
-			getScoreMap(copyBoard, scoreMap);
-			//System.out.println(scoreMap);
-			int opScore = 0;
-			int myScore = 0;
-			for(int num : scoreMap.keySet()){
-				opScore = scoreMap.get(num)*scoreMap.get(num);
-			//	opScore = scoreMap.get(num);
-				copyBoard = getCopyOfBoard(board);
-				pick(copyBoard, num/columns, num%columns);
-				fallDown(copyBoard);
-			//	System.out.println("mindepth:"+depth+" "+num);
-			//	Print(copyBoard);
-				//System.out.println(isGameOver(copyBoard));
-				myScore = 0;
-				if(!isGameOver(copyBoard)){
-					myScore = getScoreOfMax(copyBoard, depth-1, min);
-				}
-		//		System.out.println(myScore+" " +opScore);
-				if(myScore - opScore <= a)
-					return myScore - opScore;
-				min = Math.min(min, myScore - opScore);
-			}
-		//	System.out.println(min);
-			return min;
-		}
-		
-		public int getScoreOfMax(int[][] board, int depth, int b){
-			int max = Integer.MIN_VALUE;
-			if(depth <= 0){
-				int x = greedyPick(board, new int[2]);
-				return Math.max(max, x*x);
-			}
-			int[][] copyBoard = getCopyOfBoard(board);
-			Map<Integer, Integer> scoreMap = new HashMap<Integer, Integer>();
-			getScoreMap(copyBoard, scoreMap);
-			//System.out.println(scoreMap);
-			int myScore = 0;
-			int opScore = 0;
-			for(int num : scoreMap.keySet()){
-				myScore = scoreMap.get(num)*scoreMap.get(num);
-			//	myScore = scoreMap.get(num);
-				copyBoard = getCopyOfBoard(board);
-				pick(copyBoard, num/columns, num%columns);
-				fallDown(copyBoard);
-			//	System.out.println("maxdepth:"+depth+" "+num);
-			//	Print(copyBoard);
-				if(!isGameOver(copyBoard)){
-					opScore = getScoreOfMin(copyBoard, depth-1, max);
-				}
-				if(myScore+opScore >= b)
-					return myScore+opScore;
-				max = Math.max(max, myScore+opScore);
-			}
-			return max;
-		}
-
-	public boolean isGameOver(int[][] board){
-		for(int i = 0; i < rows; i++){
-			for(int j = 0; j < columns; j++){
-				if(board[i][j] != -1)
-					return false;
-			}
-		}
-		return true;
-	}
-	
 	// Look ahead the next move 
-	public void forwardCheck(int[][] board, int[] m) {
+	public static void forwardCheck(int[][] board, int[] m) {
 		int[][] copyBoard = getCopyOfBoard(board);
 		Map<Integer, Integer> scoreMap = new HashMap<Integer, Integer>(); 
-		getScoreMap(copyBoard, scoreMap);
+		int[][] sort = getScoreMap(copyBoard, scoreMap);
 		int myScore = 0;
 		int opScore = 0;
-		int max = -rows*columns;
+		int max = -rows*columns*rows*columns;
 		int maxNum = 0;
-		for (int n : scoreMap.keySet()) {
-			myScore = scoreMap.get(n);
+		for(int i = 0; i < sort.length; i++){
+			int num = sort[i][0];
+			myScore = scoreMap.get(num);
 			copyBoard = getCopyOfBoard(board);
-			pick(copyBoard, n/columns, n%columns);
+			int isGameOver = remaining - pick(copyBoard, num/columns, num%columns);
 			fallDown(copyBoard);
-			opScore = greedyPick(copyBoard, m);
+			if(isGameOver > 0)
+				opScore = greedyPick(copyBoard, m);
 			if(myScore*myScore - opScore*opScore > max){
 				max = myScore*myScore - opScore*opScore;
-				maxNum = n;
+				maxNum = num;
 			}
 		}
 		m[0] = maxNum/columns;
 		m[1] = maxNum%columns;
 	}
 	
-	public void randomPick(int[][] board, int[] m){
+	public static void randomPick(int[][] board, int[] m){
+		// pick randomly is time is out. O(1)
 		Random rnd = new Random();
 		int r = rows;
 		int c = columns;
@@ -373,23 +263,19 @@ public class MaxminAgent {
 		m[1] = c1;
 	}
 	
-	public int greedyPick(int[][] board, int[] m){
+	public static int greedyPick(int[][] board, int[] m){
+		// choose the node with max. O(n*n)
 		Map<Integer, Integer> scoreMap = new HashMap<Integer, Integer>();
-		getScoreMap(board, scoreMap);
-		int max = -rows*columns;
+		int[][] sort = getScoreMap(board, scoreMap);
 		int key = 0;
-		for(int num : scoreMap.keySet()){
-			if(max < scoreMap.get(num)){
-				max = scoreMap.get(num);
-				key = num;
-			}
-		}
+		key = sort[0][0];
 		m[0] = key/columns;
 		m[1] = key%columns;
-		return max;
+		return sort[0][1];
 	}
-	// get score of each chosen node 
-	public void getScoreMap(int[][] board, Map<Integer, Integer> scoreMap){
+	
+	// get score of each chosen node and store them. O(n*n)
+	public static int[][] getScoreMap(int[][] board, Map<Integer, Integer> scoreMap){
 		List<Integer> block = new ArrayList<Integer>();
 		int node = 0;
 		for(int i = 0; i < rows*columns; i++){
@@ -397,47 +283,53 @@ public class MaxminAgent {
 				block.add(i);
 			}
 		}
-		
 		while(!block.isEmpty()){
 			node = block.remove(0);
-			int numOfFruit = pick(board, node/columns, node%columns);
-			if(numOfFruit != 0){
+			if(board[node/columns][node%columns] != -1){
+				int numOfFruit = pick(board, node/columns, node%columns);
 				scoreMap.put(node, numOfFruit);
 			}
-		
 		}
+		int[][] sort = new int[scoreMap.size()][2];
+		int i = 0;
+		for(int key : scoreMap.keySet()){
+			sort[i][0] = key;
+			sort[i][1] = scoreMap.get(key);
+			i++;
+		}
+		Arrays.sort(sort, (a,b) -> b[1]- a[1]);
+		return sort;
 	}
 	
 	// pick a node and return the number of picked fruits 
-	public int pick(int[][] board, int r, int c){
+	public static int pick(int[][] board, int r, int c){
 		int fruit = board[r][c];
 		int numOfFruit = 0;
-		if(fruit != -1){
-			List<Integer> block = new ArrayList<Integer>();
-			block.add(r*columns + c);
-			while(!block.isEmpty()){
-				int n = block.remove(0);
-				int r1 = n/columns;
-				int c1 = n%columns;
-				if(board[r1][c1] != -1){
-					numOfFruit ++;
-					board[r1][c1] = -1;
-					if(r1 < rows-1 && board[r1+1][c1] == fruit){
-						block.add(n + columns);
-					}if(r1 > 0 && board[r1-1][c1] == fruit){
-						block.add(n - columns);
-					}if(c1 < columns-1 && board[r1][c1+1] == fruit){
-						block.add(n + 1);
-					}if(c1 > 0 && board[r1][c1-1] == fruit){
-						block.add(n - 1);
-					}
+		List<Integer> block = new ArrayList<Integer>();
+		block.add(r*columns + c);
+		while(!block.isEmpty()){
+			int n = block.remove(0);
+			int r1 = n/columns;
+			int c1 = n%columns;
+			if(board[r1][c1] != -1){
+				numOfFruit ++;
+				board[r1][c1] = -1;
+				if(r1 < rows-1 && board[r1+1][c1] == fruit){
+					block.add(n + columns);
+				}if(r1 > 0 && board[r1-1][c1] == fruit){
+					block.add(n - columns);
+				}if(c1 < columns-1 && board[r1][c1+1] == fruit){
+					block.add(n + 1);
+				}if(c1 > 0 && board[r1][c1-1] == fruit){
+					block.add(n - 1);
 				}
-			}
+			}	
 		}
 		return numOfFruit;
 	}
+	
 	// fruits fall down due to gravity
-	public void fallDown(int[][] board) {
+	public static void fallDown(int[][] board) {
 		for(int i = 0; i < columns; i++){
 			int k = rows-1;
 			for(int j = rows-1; j >= 0; j--){
@@ -451,7 +343,7 @@ public class MaxminAgent {
 		}
 	}
 	
-	public int[][] getCopyOfBoard(int[][] board) {
+	public static int[][] getCopyOfBoard(int[][] board) {
 		int[][] copyboard = new int[rows][columns];
 		for (int i = 0; i < rows; i++)
 			for (int j = 0; j < columns; j++)
